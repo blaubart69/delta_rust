@@ -82,19 +82,19 @@ where
 }
 
 pub fn run<'a, A:'a + Sized, B:'a + Sized, T1, T2, K1, K2, K3, A1, C1, C2, C3, C4>(
-    list_a              : &mut T1,
-    list_b              : &mut T2,
-    key_comparer_a_b    : K1,
-    key_comparer_a_a    : K2,
-    key_comparer_b_b    : K3,
-    attribute_comparer  : A1,
-    only_exist_in_a     : &mut C1,
-    only_exist_in_b     : &mut C2,
-    modified            : &mut C3,
-    samesame            : &mut C4,
+        list_a              : &mut T1,
+        list_b              : &mut T2,
+        key_comparer_a_b    : K1,
+        key_comparer_a_a    : K2,
+        key_comparer_b_b    : K3,
+        attribute_comparer  : A1,
+    mut only_exist_in_a     : C1,
+    mut only_exist_in_b     : C2,
+    mut modified            : C3,
+    mut samesame            : C4,
 )
     where
-        T1 : Iterator<Item=&'a A> + ?Sized
+     T1 : Iterator<Item=&'a A> + ?Sized
     ,T2 : Iterator<Item=&'a B> + ?Sized
     ,K1 : Fn(&A, &B) -> Ordering
     ,K2 : Fn(&A, &A) -> Ordering
@@ -195,10 +195,10 @@ mod tests {
             int_ordering,
             int_ordering,
             |&a, &b| { true },
-            &mut |&a| { onlya+=1; },
-            &mut |&b| { onlyb+=1; },
-            &mut |&a, &b| { modified+=1},
-            &mut |&a, &b| { samesame+=1; });
+             |&a| { onlya+=1; },
+             |&b| { onlyb+=1; },
+             |&a, &b| { modified+=1},
+             |&a, &b| { samesame+=1; });
 
         (samesame, modified, onlya, onlyb)
     }
@@ -213,16 +213,7 @@ mod tests {
         let mut onlya = 0;
         let mut onlyb = 0;
 
-        run(&mut l1.iter(),&mut l2.iter(),
-             //|&a, &b| { if a < b { Ordering::Less} else if a == b { Ordering::Equal} else { Ordering::Greater} },
-             int_ordering,
-             int_ordering,
-             int_ordering,
-             |&a, &b| { true },
-             &mut |&a| { onlya+=1; },
-             &mut |&b| { onlyb+=1; },
-             &mut |&a, &b| { modified+=1},
-             &mut |&a, &b| { samesame+=1; });
+        let (samesame, modified, onlya, onlyb) = run_delta(&mut l1.iter(), &mut l2.iter());
 
         assert_eq!(3,samesame);
         assert_eq!(0,onlya);
@@ -239,6 +230,7 @@ mod tests {
         let mut onlya = 0;
         let mut onlyb = 0;
 
+        /*
         run(&mut l1.iter(),&mut l2.iter(),
             |&a, &b| { if a < b { Ordering::Less} else if a == b { Ordering::Equal} else { Ordering::Greater} },
             |&a1, &a2| { Ordering::Greater },
@@ -248,6 +240,9 @@ mod tests {
             &mut |&b| { onlyb+=1; assert_eq!(2, b); },
             &mut |&a, &b| { modified+=1},
             &mut |&a, &b| { samesame+=1; });
+        */
+
+        let (samesame, modified, onlya, onlyb) = run_delta(&mut l1.iter(), &mut l2.iter());
 
         assert_eq!(0,samesame);
         assert_eq!(1,onlya);

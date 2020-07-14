@@ -183,24 +183,31 @@ mod tests {
 
     fn run_delta<'a>(
         list_a : &mut dyn Iterator<Item=&'a i32>,
-        list_b : &mut dyn Iterator<Item=&'a i32>) -> (i32, i32, i32, i32) {
+        list_b : &mut dyn Iterator<Item=&'a i32>)
+            -> (i32, i32, i32, i32, Vec<i32>, Vec<(i32,i32)>, Vec<i32>, Vec<i32>) {
 
         let mut samesame = 0;
         let mut modified = 0;
         let mut onlya = 0;
         let mut onlyb = 0;
 
+        let mut vec_same : Vec<i32> = Vec::new();
+        let mut vec_mod : Vec<(i32,i32)> = Vec::new();
+        let mut vec_a : Vec<i32> = Vec::new();
+        let mut vec_b : Vec<i32> = Vec::new();
+
         run(list_a, list_b,
             int_ordering,
             int_ordering,
             int_ordering,
             |&a, &b| { true },
-             |&a| { onlya+=1; },
-             |&b| { onlyb+=1; },
-             |&a, &b| { modified+=1},
-             |&a, &b| { samesame+=1; });
+                |&a| { onlya+=1; vec_a.push(a); },
+               |&b| { onlyb+=1;  vec_b.push(b);},
+                   |&a, &b| { modified+=1; vec_mod.push((a,b))},
+                  |&a, &b| { samesame+=1; vec_same.push(a); });
 
-        (samesame, modified, onlya, onlyb)
+        (samesame, modified, onlya, onlyb,
+        vec_same, vec_mod, vec_a, vec_b)
     }
 
     #[test]
@@ -208,58 +215,56 @@ mod tests {
         let l1 = vec![1,2,3];
         let l2 = vec![1,2,3];
 
-        let mut samesame = 0;
-        let mut modified = 0;
-        let mut onlya = 0;
-        let mut onlyb = 0;
-
-        let (samesame, modified, onlya, onlyb) = run_delta(&mut l1.iter(), &mut l2.iter());
+        let (samesame, modified, onlya, onlyb,
+            vec_same, vec_mod, vec_a, vec_b)
+             = run_delta(&mut l1.iter(), &mut l2.iter());
 
         assert_eq!(3,samesame);
         assert_eq!(0,onlya);
         assert_eq!(0,onlyb);
         assert_eq!(0,modified);
+
+        assert_eq!(3,vec_same.len());
+        assert_eq!(1,vec_same[0]);
+        assert_eq!(2,vec_same[1]);
+        assert_eq!(3,vec_same[2]);
     }
     #[test]
     fn one_element_but_different() {
         let l1 = vec![1];
         let l2 = vec![2];
 
-        let mut samesame = 0;
-        let mut modified = 0;
-        let mut onlya = 0;
-        let mut onlyb = 0;
-
-        /*
-        run(&mut l1.iter(),&mut l2.iter(),
-            |&a, &b| { if a < b { Ordering::Less} else if a == b { Ordering::Equal} else { Ordering::Greater} },
-            |&a1, &a2| { Ordering::Greater },
-            |&b1, &b2| { Ordering::Greater },
-            |&a, &b| { true },
-            &mut |&a| { onlya+=1; assert_eq!(1, a); },
-            &mut |&b| { onlyb+=1; assert_eq!(2, b); },
-            &mut |&a, &b| { modified+=1},
-            &mut |&a, &b| { samesame+=1; });
-        */
-
-        let (samesame, modified, onlya, onlyb) = run_delta(&mut l1.iter(), &mut l2.iter());
+        let (samesame, modified, onlya, onlyb,
+            vec_same, vec_mod, vec_a, vec_b)
+            = run_delta(&mut l1.iter(), &mut l2.iter());
 
         assert_eq!(0,samesame);
         assert_eq!(1,onlya);
         assert_eq!(1,onlyb);
         assert_eq!(0,modified);
+
+        assert_eq!(1,vec_a.len());
+        assert_eq!(1,vec_b.len());
+        assert_eq!(1,vec_a[0]);
+        assert_eq!(2,vec_b[0]);
     }
     #[test]
     fn one_element_missing_in_other_list() {
         let l1 = vec![1];
         let l2 = vec![1,2];
 
-        let (samesame, modified, onlya, onlyb) = run_delta(&mut l1.iter(), &mut l2.iter());
+        let (samesame, modified, onlya, onlyb,
+            vec_same, vec_mod, vec_a, vec_b)
+            = run_delta(&mut l1.iter(), &mut l2.iter());
 
         assert_eq!(1,samesame);
         assert_eq!(0,onlya);
         assert_eq!(1,onlyb);
         assert_eq!(0,modified);
-    }
 
+        assert_eq!(1,vec_same.len());
+        assert_eq!(1,vec_b.len());
+        assert_eq!(1,vec_same[0]);
+        assert_eq!(2,vec_b[0]);
+    }
 }
